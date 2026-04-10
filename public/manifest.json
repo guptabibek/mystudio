@@ -1,0 +1,15 @@
+{
+  "name": "Lumiere Studio - Luxury Photography",
+  "short_name": "Lumiere",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#0D0D0D",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

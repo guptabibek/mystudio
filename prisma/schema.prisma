@@ -1,0 +1,655 @@
+// Photo Studio Booking & Delivery Platform - Production Schema
+// SQLite for Development | PostgreSQL for Production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT & AUTHENTICATION
+// ============================================
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String?
+  phone         String?
+  avatar        String?
+  role          UserRole  @default(CUSTOMER)
+  emailVerified DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // OAuth accounts
+  accounts      Account[]
+  sessions      Session[]
+
+  // Relations
+  bookings      Booking[]
+  payments      Payment[]
+  photoAccesses PhotoAccess[]
+  auditLogs     AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionToken])
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// PACKAGES & PRICING
+// ============================================
+
+enum PackageStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+model Package {
+  id              String        @id @default(cuid())
+  name            String
+  description     String?
+  duration        Int           // Duration in minutes
+  price           Decimal
+  currency        String        @default("USD")
+  maxPhotos       Int           @default(10)
+  includesEdit    Boolean       @default(false)
+  features        String?       // JSON string of features
+  status          PackageStatus @default(ACTIVE)
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  bookings        Booking[]
+  pricingRules    PricingRule[]
+
+  @@index([status])
+  @@index([sortOrder])
+}
+
+model PricingRule {
+  id              String   @id @default(cuid())
+  packageId       String
+  name            String
+  dayOfWeek       Int?     // 0-6, null for all days
+  startDate       DateTime?
+  endDate         DateTime?
+  priceModifier   Decimal  // Multiplier or fixed amount
+  modifierType    String   @default("MULTIPLIER") // MULTIPLIER, FIXED_ADD, FIXED_SET
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  package         Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId])
+  @@index([isActive])
+}
+
+// ============================================
+// AVAILABILITY MANAGEMENT
+// ============================================
+
+enum DayOfWeek {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model AvailabilityRule {
+  id              String    @id @default(cuid())
+  dayOfWeek       DayOfWeek
+  startTime       String    // Format: HH:MM
+  endTime         String    // Format: HH:MM
+  slotDuration    Int       @default(60) // in minutes
+  bufferTime      Int       @default(15) // buffer between slots in minutes
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([dayOfWeek, startTime])
+  @@index([dayOfWeek])
+  @@index([isActive])
+  @@index([isActive, dayOfWeek])
+}
+
+model BlackoutDate {
+  id              String    @id @default(cuid())
+  startDate       DateTime
+  endDate         DateTime
+  reason          String?
+  isRecurring     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([startDate, endDate])
+}
+
+// ============================================
+// BOOKING SYSTEM
+// ============================================
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
+}
+
+model TimeSlot {
+  id              String      @id @default(cuid())
+  date            DateTime
+  startTime       String      // Format: HH:MM
+  endTime         String      // Format: HH:MM
+  isAvailable     Boolean     @default(true)
+  isLocked        Boolean     @default(false)
+  lockedUntil     DateTime?
+  lockedBy        String?     // User ID who locked it
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  bookings        Booking[]
+
+  @@unique([date, startTime, endTime])
+  @@index([date])
+  @@index([isAvailable])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  bookingNumber   String        @unique
+  userId          String
+  packageId       String
+  timeSlotId      String?
+  status          BookingStatus @default(PENDING)
+  
+  // Customer details (snapshot at booking time)
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerNotes   String?
+  
+  // Pricing snapshot
+  basePrice       Decimal
+  finalPrice      Decimal
+  discountAmount  Decimal       @default(0)
+  discountReason  String?
+  currency        String        @default("USD")
+  
+  // Session details
+  sessionDate     DateTime
+  sessionStart    String
+  sessionEnd      String
+  
+  // Metadata
+  cancelledAt     DateTime?
+  cancelledReason String?
+  completedAt     DateTime?
+  confirmedAt     DateTime?
+  reminderSent    Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package         Package       @relation(fields: [packageId], references: [id])
+  timeSlot        TimeSlot?     @relation(fields: [timeSlotId], references: [id])
+  payments        Payment[]
+  photoCollection PhotoCollection?
+
+  @@index([userId])
+  @@index([packageId])
+  @@index([status])
+  @@index([sessionDate])
+  @@index([bookingNumber])
+  @@index([status, createdAt])
+  @@index([sessionDate, status])
+}
+
+// ============================================
+// PAYMENT SYSTEM
+// ============================================
+
+enum PaymentMethod {
+  STRIPE
+  ESEWA
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+  DISPUTED
+}
+
+model Payment {
+  id                  String        @id @default(cuid())
+  bookingId           String
+  userId              String
+  amount              Decimal
+  currency            String        @default("USD")
+  method              PaymentMethod
+  status              PaymentStatus @default(PENDING)
+  
+  // Transaction IDs
+  transactionId       String?       @unique
+  gatewayReference    String?       // Stripe PI ID, eSewa ref, etc.
+  
+  // Stripe specific
+  stripePaymentIntent String?
+  stripeClientSecret  String?
+  
+  // eSewa specific
+  esewaProductId      String?
+  esewaSignature      String?
+  
+  // Bank transfer specific
+  bankName            String?
+  bankAccountNumber   String?
+  bankReferenceNumber String?
+  paymentProofUrl     String?
+  paymentProofPublicId String?
+  adminVerifiedAt     DateTime?
+  adminVerifiedBy     String?
+  adminNotes          String?
+  
+  // Webhook tracking
+  webhookReceived     Boolean       @default(false)
+  webhookData         String?       // JSON
+  webhookProcessedAt  DateTime?
+  
+  // Refund tracking
+  refundAmount        Decimal?
+  refundReason        String?
+  refundedAt          DateTime?
+  
+  // Metadata
+  ipAddress           String?
+  userAgent           String?
+  failureReason       String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // Relations
+  booking             Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user                User          @relation(fields: [userId], references: [id])
+
+  @@index([bookingId])
+  @@index([userId])
+  @@index([status])
+  @@index([method])
+  @@index([transactionId])
+  @@index([gatewayReference])
+  @@index([bookingId, status])
+  @@index([method, status, createdAt])
+  @@index([stripePaymentIntent])
+  @@index([esewaProductId])
+}
+
+// ============================================
+// PHOTO MANAGEMENT
+// ============================================
+
+enum PhotoCollectionStatus {
+  PENDING
+  UPLOADING
+  PROCESSING
+  READY
+  DELIVERED
+  ARCHIVED
+}
+
+model PhotoCollection {
+  id              String                @id @default(cuid())
+  bookingId       String                @unique
+  uploadedBy      String                // Admin user ID
+  totalPhotos     Int                   @default(0)
+  processedPhotos Int                   @default(0)
+  status          PhotoCollectionStatus @default(PENDING)
+  
+  // Delivery settings
+  accessExpiresAt DateTime?
+  downloadLimit   Int?
+  downloadCount   Int                   @default(0)
+  
+  // Notification tracking
+  customerNotified Boolean              @default(false)
+  notifiedAt       DateTime?
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  // Relations
+  booking         Booking               @relation(fields: [bookingId], references: [id])
+  photos          Photo[]
+  accessLinks     PhotoAccessLink[]
+  photoAccesses   PhotoAccess[]
+}
+
+model Photo {
+  id              String        @id @default(cuid())
+  collectionId    String
+  filename        String
+  originalName    String
+  mimeType        String
+  fileSize        Int           // in bytes
+  
+  // Storage paths
+  originalPath    String
+  previewPath     String?
+  thumbnailPath   String?
+  
+  // Dimensions
+  width           Int?
+  height          Int?
+  
+  // Metadata
+  publicId        String        @unique // For CDN/object storage
+  uploadedAt      DateTime      @default(now())
+  
+  // Status
+  isProcessed     Boolean       @default(false)
+  processingError String?
+  
+  // Sorting
+  sortOrder       Int           @default(0)
+  
+  // Access tracking
+  viewCount       Int           @default(0)
+  downloadCount   Int           @default(0)
+
+  // Relations
+  collection      PhotoCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  accessLogs      PhotoAccessLog[]
+
+  @@index([collectionId])
+  @@index([publicId])
+  @@index([isProcessed])
+  @@index([isProcessed, uploadedAt])
+  @@index([collectionId, sortOrder])
+}
+
+model PhotoAccessLink {
+  id              String    @id @default(cuid())
+  collectionId    String
+  token           String    @unique
+  createdBy       String    // Admin user ID
+  
+  // Access control
+  maxAccesses     Int?
+  accessCount     Int       @default(0)
+  expiresAt       DateTime?
+  
+  // Status
+  isActive        Boolean   @default(true)
+  lastAccessedAt  DateTime?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  collection      PhotoCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([collectionId])
+  @@index([isActive])
+}
+
+model PhotoAccess {
+  id              String    @id @default(cuid())
+  userId          String
+  collectionId    String
+  accessGrantedAt DateTime  @default(now())
+  lastAccessedAt  DateTime?
+  
+  // Download tracking
+  downloadsUsed   Int       @default(0)
+  downloadLimit   Int?
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection      PhotoCollection @relation(fields: [collectionId], references: [id])
+
+  @@unique([userId, collectionId])
+  @@index([userId])
+  @@index([collectionId])
+}
+
+model PhotoAccessLog {
+  id              String    @id @default(cuid())
+  photoId         String
+  ipAddress       String?
+  userAgent       String?
+  action          String    // VIEW, DOWNLOAD
+  accessedAt      DateTime  @default(now())
+
+  // Relations
+  photo           Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@index([photoId])
+  @@index([action])
+  @@index([accessedAt])
+}
+
+// ============================================
+// AUDIT & SECURITY
+// ============================================
+
+enum AuditAction {
+  // User actions
+  USER_LOGIN
+  USER_LOGOUT
+  USER_REGISTER
+  USER_PASSWORD_CHANGE
+  USER_PROFILE_UPDATE
+  
+  // Booking actions
+  BOOKING_CREATED
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_RESCHEDULED
+  BOOKING_COMPLETED
+  
+  // Payment actions
+  PAYMENT_INITIATED
+  PAYMENT_COMPLETED
+  PAYMENT_FAILED
+  PAYMENT_REFUNDED
+  PAYMENT_VERIFIED
+  
+  // Admin actions
+  ADMIN_LOGIN
+  ADMIN_PHOTO_UPLOAD
+  ADMIN_PHOTO_DELETE
+  ADMIN_AVAILABILITY_CHANGE
+  ADMIN_PACKAGE_UPDATE
+  ADMIN_PRICING_CHANGE
+  
+  // Security events
+  FAILED_LOGIN_ATTEMPT
+  RATE_LIMIT_EXCEEDED
+  SUSPICIOUS_ACTIVITY
+}
+
+model AuditLog {
+  id              String      @id @default(cuid())
+  userId          String?
+  action          AuditAction
+  entityType      String?     // User, Booking, Payment, etc.
+  entityId        String?
+  
+  // Details
+  description     String?
+  oldValues       String?     // JSON
+  newValues       String?     // JSON
+  
+  // Request context
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime    @default(now())
+
+  // Relations - only direct user relation, others are referenced by entityId
+  user            User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model SystemConfig {
+  id              String    @id @default(cuid())
+  key             String    @unique
+  value           String
+  description     String?
+  isEncrypted     Boolean   @default(false)
+  updatedAt       DateTime  @updatedAt
+  updatedBy       String?
+
+  @@index([key])
+}
+
+// ============================================
+// NOTIFICATION TEMPLATES
+// ============================================
+
+enum NotificationType {
+  EMAIL
+  SMS
+  PUSH
+}
+
+model NotificationTemplate {
+  id              String            @id @default(cuid())
+  name            String            @unique
+  type            NotificationType
+  subject         String?
+  body            String            // HTML for email, plain text for SMS
+  variables       String?           // JSON array of variable names
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([name])
+  @@index([type])
+  @@index([isActive])
+}
+
+model NotificationLog {
+  id              String            @id @default(cuid())
+  templateId      String?
+  recipientEmail  String?
+  recipientPhone  String?
+  subject         String?
+  body            String
+  status          String            @default("PENDING") // PENDING, SENT, FAILED
+  error           String?
+  sentAt          DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================
+// RATE LIMITING
+// ============================================
+
+model RateLimitEntry {
+  id              String    @id @default(cuid())
+  key             String    @unique
+  count           Int       @default(1)
+  resetAt         DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([key])
+  @@index([resetAt])
+}
+
+// ============================================
+// WAITING LIST
+// ============================================
+
+model WaitingListEntry {
+  id              String    @id @default(cuid())
+  email           String
+  phone           String?
+  preferredDate   DateTime?
+  preferredTime   String?
+  packageId       String?
+  notes           String?
+  notifiedAt      DateTime?
+  convertedToBooking Boolean @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email])
+  @@index([preferredDate])
+  @@index([convertedToBooking])
+}

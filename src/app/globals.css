@@ -1,0 +1,433 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-ivory: var(--ivory);
+  --color-champagne: var(--champagne);
+  --color-blush: var(--blush);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --gold: #D4AF37;
+  --gold-light: #E8D48B;
+  --ivory: #F8F6F2;
+  --champagne: #F7E7CE;
+  --blush: #F9E4E4;
+  --background: #FAFAF9;
+  --foreground: #0D0D0D;
+  --card: #FFFFFF;
+  --card-foreground: #0D0D0D;
+  --popover: #FFFFFF;
+  --popover-foreground: #0D0D0D;
+  --primary: #0D0D0D;
+  --primary-foreground: #F8F6F2;
+  --secondary: #F8F6F2;
+  --secondary-foreground: #0D0D0D;
+  --muted: #F3F1ED;
+  --muted-foreground: #6B6560;
+  --accent: #D4AF37;
+  --accent-foreground: #0D0D0D;
+  --destructive: #DC2626;
+  --border: #E8E4DE;
+  --input: #E8E4DE;
+  --ring: #D4AF37;
+  --chart-1: #D4AF37;
+  --chart-2: #0D0D0D;
+  --chart-3: #8B7355;
+  --chart-4: #C9A96E;
+  --chart-5: #E8D48B;
+  --sidebar: #FAFAF9;
+  --sidebar-foreground: #0D0D0D;
+  --sidebar-primary: #0D0D0D;
+  --sidebar-primary-foreground: #F8F6F2;
+  --sidebar-accent: #F3F1ED;
+  --sidebar-accent-foreground: #0D0D0D;
+  --sidebar-border: #E8E4DE;
+  --sidebar-ring: #D4AF37;
+}
+
+.dark {
+  --background: #0D0D0D;
+  --foreground: #F8F6F2;
+  --card: #161616;
+  --card-foreground: #F8F6F2;
+  --popover: #161616;
+  --popover-foreground: #F8F6F2;
+  --primary: #F8F6F2;
+  --primary-foreground: #0D0D0D;
+  --secondary: #1A1A1A;
+  --secondary-foreground: #F8F6F2;
+  --muted: #1A1A1A;
+  --muted-foreground: #8A857F;
+  --accent: #D4AF37;
+  --accent-foreground: #0D0D0D;
+  --destructive: #EF4444;
+  --border: rgba(248, 246, 242, 0.08);
+  --input: rgba(248, 246, 242, 0.1);
+  --ring: #D4AF37;
+  --chart-1: #D4AF37;
+  --chart-2: #F8F6F2;
+  --chart-3: #C9A96E;
+  --chart-4: #8B7355;
+  --chart-5: #E8D48B;
+  --sidebar: #161616;
+  --sidebar-foreground: #F8F6F2;
+  --sidebar-primary: #D4AF37;
+  --sidebar-primary-foreground: #0D0D0D;
+  --sidebar-accent: #1A1A1A;
+  --sidebar-accent-foreground: #F8F6F2;
+  --sidebar-border: rgba(248, 246, 242, 0.08);
+  --sidebar-ring: #D4AF37;
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  /* Native control colors for consistent dark dropdown rendering across browsers/OS */
+  select,
+  textarea,
+  input {
+    color: var(--foreground);
+    background-color: var(--card);
+  }
+
+  option,
+  optgroup {
+    color: var(--foreground);
+    background-color: var(--card);
+  }
+}
+
+/* ====== Luxury Typography ====== */
+.font-serif {
+  font-family: var(--font-playfair), "Playfair Display", Georgia, serif;
+}
+
+.font-sans {
+  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+}
+
+/* ====== Cinematic Ken Burns Effect ====== */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  50% {
+    transform: scale(1.12) translate(-1.5%, -1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 20s ease-in-out infinite;
+}
+
+/* ====== Slow Zoom ====== */
+@keyframes slow-zoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.15); }
+}
+
+.animate-slow-zoom {
+  animation: slow-zoom 25s ease-out forwards;
+}
+
+/* ====== Shimmer for Gold Accent ====== */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.gold-shimmer {
+  background: linear-gradient(110deg, #D4AF37 0%, #F7E7CE 25%, #D4AF37 50%, #F7E7CE 75%, #D4AF37 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 5s linear infinite;
+}
+
+/* ====== Fade In Up ====== */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+/* ====== Stagger children ====== */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-in-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.6s; }
+
+/* ====== Glass Morphism ====== */
+.glass {
+  background: rgba(13, 13, 13, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-light {
+  background: rgba(248, 246, 242, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.luxury-select {
+  background-color: #161616;
+  color: #F8F6F2;
+  border-color: rgba(248, 246, 242, 0.12);
+}
+
+.luxury-select option,
+.luxury-select optgroup {
+  background-color: #161616;
+  color: #F8F6F2;
+}
+
+/* ====== Luxury Gradient Borders ====== */
+.gold-border {
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.gold-border-glow {
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.08), inset 0 0 20px rgba(212, 175, 55, 0.03);
+}
+
+/* ====== Pulse Glow for CTAs ====== */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
+  50% { box-shadow: 0 0 20px 4px rgba(212, 175, 55, 0.2); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* ====== Smooth Page Transitions ====== */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateX(20px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.page-transition-exit {
+  opacity: 1;
+}
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ====== Hide scrollbar for clean app feel ====== */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ====== Skeleton loading animation ====== */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.15; }
+}
+
+.skeleton-loading {
+  background: linear-gradient(110deg, var(--muted) 0%, rgba(212, 175, 55, 0.05) 50%, var(--muted) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ====== Safe area for notch devices ====== */
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Mobile-specific utilities */
+@layer utilities {
+  /* Safe area padding for notch/home indicator */
+  .h-safe-top {
+    height: env(safe-area-inset-top, 0px);
+  }
+  .pt-safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* Touch manipulation for better mobile interactions */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Prevent text selection on interactive elements */
+  .select-none {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Custom animations for mobile */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Pull to refresh indicator */
+.pull-indicator {
+  transition: transform 0.2s ease-out;
+}
+
+/* Active state for mobile buttons */
+@media (hover: none) {
+  button:active,
+  [role="button"]:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}
+
+/* Ensure visibility when animations are disabled */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .stagger-children > *,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
