@@ -2,8 +2,8 @@
 set -eu
 
 if [ "${SKIP_DB_MIGRATIONS:-false}" != "true" ]; then
-  echo "Applying Prisma migrations..."
-  npx prisma migrate deploy
+  echo "Preparing production database..."
+  node scripts/prepare-production-db.mjs
 fi
 
 echo "Starting Photo Studio application..."
