@@ -16,11 +16,15 @@ function run(command, args) {
 }
 
 async function tableExists(tableName) {
-  const rows = await prisma.$queryRawUnsafe(
-    `SELECT to_regclass('public."${tableName}"') AS value`
-  )
+  const rows = await prisma.$queryRaw`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = ${tableName}
+    ) AS "value"
+  `
 
-  return rows[0]?.value !== null
+  return rows[0]?.value === true
 }
 
 async function getFailedMigrations() {
