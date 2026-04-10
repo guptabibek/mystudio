@@ -5,6 +5,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        DATABASE_URL: ${DATABASE_URL}
+        JWT_SECRET: ${JWT_SECRET}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        NEXTAUTH_URL: ${NEXTAUTH_URL}
         NEXT_PUBLIC_STUDIO_NAME: ${NEXT_PUBLIC_STUDIO_NAME}
         NEXT_PUBLIC_STUDIO_TAGLINE: ${NEXT_PUBLIC_STUDIO_TAGLINE}
         NEXT_PUBLIC_STUDIO_EMAIL: ${NEXT_PUBLIC_STUDIO_EMAIL}
@@ -21,10 +25,10 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 31111
       HOSTNAME: 0.0.0.0
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${APP_PORT:-31111}:31111"
     volumes:
       - uploads_data:/app/uploads
     restart: unless-stopped
