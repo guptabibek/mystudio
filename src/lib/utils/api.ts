@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { config } from '@/lib/config'
+import { getAuthSessionCookieName, useSecureAuthSessionCookie } from '@/lib/services/auth-session'
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -41,7 +43,12 @@ export function paginatedResponse<T>(
 }
 
 export async function getAuthenticatedUser(req: NextRequest) {
-  const token = await getToken({ req })
+  const token = await getToken({
+    req,
+    secret: config.NEXTAUTH_SECRET,
+    secureCookie: useSecureAuthSessionCookie(),
+    cookieName: getAuthSessionCookieName(),
+  })
 
   if (!token) {
     return null

@@ -11,10 +11,23 @@ interface SessionUser {
   avatar: string | null
 }
 
+export function useSecureAuthSessionCookie() {
+  return config.NODE_ENV === 'production'
+}
+
+export function getAuthSessionCookieName() {
+  return useSecureAuthSessionCookie()
+    ? '__Secure-next-auth.session-token'
+    : 'next-auth.session-token'
+}
+
 export async function setAuthSessionCookie(user: SessionUser) {
+  const sessionCookieName = getAuthSessionCookieName()
+
   const token = await encode({
     secret: config.NEXTAUTH_SECRET,
     maxAge: 7 * 24 * 60 * 60,
+    salt: sessionCookieName,
     token: {
       id: user.id,
       email: user.email,
@@ -25,14 +38,10 @@ export async function setAuthSessionCookie(user: SessionUser) {
   })
 
   const cookieStore = await cookies()
-  const sessionCookieName =
-    config.NODE_ENV === 'production'
-      ? '__Secure-next-auth.session-token'
-      : 'next-auth.session-token'
 
   cookieStore.set(sessionCookieName, token, {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
+    secure: useSecureAuthSessionCookie(),
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60,
     path: '/',
